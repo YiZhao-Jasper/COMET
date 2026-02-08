@@ -77,7 +77,7 @@ COMET/
 ### Prerequisites
 
 - Python 3.9+
-- CUDA 11.8+ compatible GPU (tested on NVIDIA V100-32G and RTX 5090)
+- CUDA 11.8+ compatible GPU (tested on NVIDIA RTX 5090-32G)
 - ~12 GB GPU memory per device (with batch_size=4, FP16)
 
 ### Environment Setup
@@ -139,12 +139,12 @@ tail -f training.log
 
 | Parameter | Value | Rationale |
 |-----------|-------|-----------|
-| GPUs | 2 × V100-32G (DDP) | Sufficient memory with batch=4/GPU |
+| GPUs | 2 × RTX 5090-32G (DDP) | Sufficient memory with batch=4/GPU |
 | Batch / GPU | 4 | ~10 GB memory per device |
 | Gradient Accumulation | 2 | Effective batch = 16 |
 | Total Epochs | 400 | ~34,800 optimization steps |
 | Learning Rate | 1e-4 | Adam optimizer |
-| Precision | FP16 mixed | V100 optimized |
+| Precision | FP16 mixed | RTX 5090 optimized |
 | Gradient Clipping | 1.0 | Stabilize training |
 
 ### COMET-Specific Hyperparameters

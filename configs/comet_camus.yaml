@@ -4,7 +4,7 @@
 # Based on MOTFM/configs/mask_conditioning.yaml
 # Architecture kept IDENTICAL to MOTFM for fair comparison.
 # Training: effective batch=16, 400 epochs, ~35,000 total opt steps
-# Hardware: 2× V100-32G DDP
+# Hardware: 2× RTX 5090-32G DDP
 # =============================================================================
 
 model_args:
@@ -20,7 +20,7 @@ model_args:
   # Same as MOTFM: 8 transformer layers
   transformer_num_layers: 8
 
-  # V100 does not support FlashAttention v2 (requires A100+)
+  # RTX 5090 supports FlashAttention v2, but we keep it disabled for compatibility
   use_flash_attention: false
 
   # Mask conditioning via ControlNet (same as MOTFM)
@@ -39,7 +39,7 @@ data_args:
 
 
 train_args:
-  # ---- 2×V100 DDP, effective_batch=16, 400 epochs ----
+  # ---- 2×RTX 5090 DDP, effective_batch=16, 400 epochs ----
   # Per-GPU batch size: 4 × 2 GPUs = 8 samples/step
   # gradient_accumulation: 2 → effective batch = 8 × 2 = 16
   # Total opt steps: (1400/8)/2 × 400 ≈ 87 × 400 = 34,800 (matches MOTFM)
@@ -58,7 +58,7 @@ train_args:
   num_val_samples: 10
   checkpoint_dir: checkpoints
 
-  # DDP settings for 2x V100
+  # DDP settings for 2x RTX 5090
   accelerator: "gpu"
   devices: 2
   num_workers: 4
@@ -66,7 +66,7 @@ train_args:
   persistent_workers: true
   drop_last: true
 
-  # Precision: V100 supports fp16
+  # Precision: RTX 5090 supports fp16
   precision: "16-mixed"
 
   # Gradient clipping
