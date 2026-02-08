@@ -1,0 +1,110 @@
+# =============================================================================
+# COMET Configuration for CAMUS Dataset
+# =============================================================================
+# Based on MOTFM/configs/mask_conditioning.yaml
+# Architecture kept IDENTICAL to MOTFM for fair comparison.
+# Training: effective batch=16, 400 epochs, ~35,000 total opt steps
+# Hardware: 2× V100-32G DDP
+# =============================================================================
+
+model_args:
+  spatial_dims: 2
+  in_channels: 1
+  out_channels: 1
+  num_res_blocks: [2, 2, 2, 2, 2]
+  num_channels: [32, 64, 128, 256, 512]
+  attention_levels: [False, False, True, True, True]
+  norm_num_groups: 32
+  resblock_updown: True
+  num_head_channels: [32, 64, 128, 256, 512]
+  # Same as MOTFM: 8 transformer layers
+  transformer_num_layers: 8
+
+  # V100 does not support FlashAttention v2 (requires A100+)
+  use_flash_attention: false
+
+  # Mask conditioning via ControlNet (same as MOTFM)
+  with_conditioning: false
+  mask_conditioning: true
+  cross_attention_dim: null
+
+  # ControlNet embedding channels (same as MOTFM)
+  conditioning_embedding_num_channels: [16]
+
+
+data_args:
+  pickle_path: "/share/home/zhaoyi/data/camus/camus_dataset.pkl"
+  split_train: "train"
+  split_val: "valid"
+
+
+train_args:
+  # ---- 2×V100 DDP, effective_batch=16, 400 epochs ----
+  # Per-GPU batch size: 4 × 2 GPUs = 8 samples/step
+  # gradient_accumulation: 2 → effective batch = 8 × 2 = 16
+  # Total opt steps: (1400/8)/2 × 400 ≈ 87 × 400 = 34,800 (matches MOTFM)
+  num_epochs: 400
+  batch_size: 4
+  gradient_accumulation_steps: 2
+  lr: 0.0001
+
+  # ---- Validation & Checkpoint ----
+  # Validate every epoch
+  val_freq: 1
+  # Checkpoint saving: best + every 10 epochs (see trainer.py)
+  save_every_n_epochs: 10
+
+  device: "cuda"
+  num_val_samples: 10
+  checkpoint_dir: checkpoints
+
+  # DDP settings for 2x V100
+  accelerator: "gpu"
+  devices: 2
+  num_workers: 4
+  pin_memory: true
+  persistent_workers: true
+  drop_last: true
+
+  # Precision: V100 supports fp16
+  precision: "16-mixed"
+
+  # Gradient clipping
+  grad_clip_norm: 1.0
+
+  log_every_n_steps: 20
+  num_sanity_val_steps: 0
+
+
+solver_args:
+  method: "euler"
+  step_size: 0.1
+  time_points: 10
+
+
+# =============================================================================
+# COMET Specific Arguments
+# =============================================================================
+comet_args:
+  # ---- Warm-Start Coupling (from ConditionalPriorFM) ----
+  use_warm_start: true
+  warm_start_alpha: 0.3
+  warm_start_blur_kernel: 15
+  warm_start_blur_sigma: 5.0
+
+  # ---- Contrastive Flow Loss (InfoNCE in velocity space) ----
+  # Evolved from DeltaFM's triplet formulation (pos - temp*neg, unbounded)
+  # to InfoNCE (always >= 0, bounded by log(B), principled gradients).
+  use_contrastive: true
+  # Temperature: controls cosine-InfoNCE discrimination sharpness.
+  # Cosine similarity ∈ [-1, 1]. With tau=0.07 (CLIP default):
+  #   cos_pos ≈ 0.8 → logit = 11.4, cos_neg ≈ 0.3 → logit = 4.3
+  #   Softmax non-trivial → meaningful gradient for diversity.
+  # Scale-invariant: cannot cause velocity collapse (unlike L2-InfoNCE).
+  contrastive_temperature: 0.07
+  # Weight: Cosine-InfoNCE ≈ 0.5-1.0 typically, MSE ≈ 0.03.
+  # weight=0.01 → contrastive contributes ~0.005-0.01 to total.
+  # Deliberately small: MSE dominates for accurate velocity prediction;
+  # contrastive provides gentle directional diversity pressure.
+  contrastive_weight: 0.01
+  contrastive_warmup_epochs: 5

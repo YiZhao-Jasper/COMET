@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+myvenv/
+venv/
+env/
+ENV/
+
+# Data and checkpoints
+data/
+checkpoints/
+*.pth
+*.ckpt
+*.pkl
+
+# Logs
+*.log
+training.log
+eval*.log
+quick_eval.log
+
+# Evaluation results
+eval_results*/
+evaluation_results/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Paper development (keep for publication, but not for code review)
+paper/
+
+# Reference implementations (already cited, users can clone separately)
+ref_DeltaFM/
+ref_ConditionalPriorFM/
+
+# Temporary files
+*temp*
+*.tmp
+.DS_Store
+
+# Lightning logs
+lightning_logs/
+version_*/
+
+# Misc
+*.bak
+*.orig
